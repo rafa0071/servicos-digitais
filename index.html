@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Estúdio Digital · Serviços</title>
+<meta name="description" content="Demonstração de site de venda de serviços digitais: home, pacotes e checkout com Stripe ou PayPal.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: sticky top bar; three views (home, serviços, checkout) switched by hash */
+:root {
+  --bg: #fbfaf7;
+  --surface: #ffffff;
+  --ink: #17151f;
+  --muted: #625e70;
+  --line: #e6e2da;
+  --brand: #ff5a36;      /* laranja */
+  --brand-ink: #ffffff;
+  --deep: #1e1b4b;       /* índigo profundo */
+  --soft: #fff1ec;
+  --ok: #1f7a4d;
+  --f-display: "Sora", "Segoe UI", sans-serif;
+  --f-body: "Inter", "Segoe UI", Roboto, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.55; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-left: max(18px, env(safe-area-inset-left)); padding-right: max(18px, env(safe-area-inset-right)); }
+
+/* Top bar */
+.top { position: sticky; top: 0; z-index: 10; background: rgba(251,250,247,.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 14px; }
+.logo { font-family: var(--f-display); font-weight: 800; font-size: 20px; text-decoration: none; display: flex; align-items: center; gap: 8px; }
+.logo i { width: 26px; height: 26px; border-radius: 8px; background: var(--brand); display: inline-block; transform: rotate(8deg); }
+nav { display: flex; gap: 6px; align-items: center; }
+nav a { text-decoration: none; font-weight: 500; padding: 8px 12px; border-radius: 999px; color: var(--muted); }
+nav a[aria-current="page"] { color: var(--ink); background: var(--soft); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 12px; padding: 13px 20px; font: 600 16px var(--f-body); cursor: pointer; text-decoration: none; background: var(--brand); color: var(--brand-ink); }
+.btn.dark { background: var(--deep); }
+.btn.ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--line); }
+.btn.sm { padding: 9px 14px; font-size: 14px; border-radius: 10px; }
+
+/* Hero */
+.hero { padding-block: 64px 40px; display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: center; }
+.eyebrow { font-weight: 600; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--brand); }
+h1 { font-family: var(--f-display); font-weight: 800; font-size: clamp(34px, 5.4vw, 58px); line-height: 1.05; letter-spacing: -.02em; margin: 12px 0 18px; text-wrap: balance; }
+.lead { font-size: 19px; color: var(--muted); max-width: 52ch; margin: 0 0 28px; }
+.cta { display: flex; flex-wrap: wrap; gap: 12px; }
+.proof { display: flex; gap: 22px; margin-top: 30px; flex-wrap: wrap; color: var(--muted); font-size: 14px; }
+.proof b { display: block; font-family: var(--f-display); font-size: 24px; color: var(--ink); }
+.hero-card { background: var(--deep); color: #fff; border-radius: 22px; padding: 28px; position: relative; overflow: hidden; }
+.hero-card::after { content: ""; position: absolute; width: 220px; height: 220px; border-radius: 50%; background: var(--brand); right: -70px; top: -70px; opacity: .9; }
+.hero-card h3 { font-family: var(--f-display); margin: 0 0 16px; position: relative; z-index: 1; font-size: 20px; }
+.steps { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; position: relative; z-index: 1; }
+.steps li { display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: start; background: rgba(255,255,255,.07); border-radius: 14px; padding: 12px; }
+.steps span { width: 34px; height: 34px; border-radius: 10px; background: rgba(255,255,255,.14); display: grid; place-items: center; font-family: var(--f-display); font-weight: 700; }
+.steps p { margin: 0; color: #d9d7f0; font-size: 15px; }
+.steps strong { color: #fff; display: block; }
+
+section.block { padding-block: 40px; }
+h2 { font-family: var(--f-display); font-size: clamp(26px, 3.4vw, 36px); letter-spacing: -.015em; margin: 0 0 8px; text-wrap: balance; }
+.sub { color: var(--muted); margin: 0 0 28px; }
+
+/* Packages */
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.pkg { background: var(--surface); border: 1.5px solid var(--line); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 14px; }
+.pkg.featured { border-color: var(--brand); box-shadow: 0 18px 40px rgba(255,90,54,.15); }
+.tag { align-self: flex-start; font-size: 12px; font-weight: 600; background: var(--soft); color: var(--brand); padding: 3px 10px; border-radius: 999px; }
+.pkg h3 { font-family: var(--f-display); margin: 0; font-size: 21px; }
+.price { font-family: var(--f-display); font-size: 36px; font-weight: 800; letter-spacing: -.02em; }
+.price small { font-family: var(--f-body); font-size: 14px; color: var(--muted); font-weight: 500; }
+.pkg ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; color: var(--muted); font-size: 15px; flex: 1; }
+.pkg li::before { content: "✓"; color: var(--ok); font-weight: 700; margin-right: 8px; }
+.meta { font-size: 13px; color: var(--muted); }
+
+/* Services list */
+.svc { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.svc article { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px; }
+.svc h3 { font-family: var(--f-display); font-size: 18px; margin: 0 0 6px; }
+.svc p { margin: 0; color: var(--muted); font-size: 15px; }
+
+/* FAQ */
+details { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; }
+details + details { margin-top: 10px; }
+summary { font-weight: 600; cursor: pointer; }
+details p { color: var(--muted); margin: 10px 0 0; }
+
+/* Checkout */
+.checkout { display: grid; grid-template-columns: 1.2fr .8fr; gap: 24px; padding-block: 40px 64px; align-items: start; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 24px; }
+.panel h2 { font-size: 24px; }
+form { display: grid; gap: 14px; }
+label { display: grid; gap: 6px; font-weight: 500; font-size: 14px; }
+input, textarea, select { font: inherit; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: 10px; background: #fff; width: 100%; }
+textarea { min-height: 96px; resize: vertical; }
+.pay { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pay label { grid-template-columns: auto 1fr; align-items: center; border: 1.5px solid var(--line); border-radius: 12px; padding: 12px; cursor: pointer; font-weight: 600; }
+.pay input { width: auto; }
+.pay label:has(input:checked) { border-color: var(--brand); background: var(--soft); }
+.summary dl { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin: 14px 0; }
+.summary dd { margin: 0; text-align: right; font-weight: 600; }
+.summary .total { border-top: 1px solid var(--line); padding-top: 12px; font-family: var(--f-display); font-size: 22px; }
+.secure { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); margin-top: 10px; }
+.notice { background: var(--soft); border-radius: 12px; padding: 14px; font-size: 14px; }
+.done { text-align: center; padding: 40px 20px; }
+.done h2 { margin-bottom: 6px; }
+
+footer { border-top: 1px solid var(--line); padding-block: 28px; color: var(--muted); font-size: 14px; }
+footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+@media (max-width: 860px) {
+  .hero, .checkout { grid-template-columns: 1fr; }
+  .grid3 { grid-template-columns: 1fr; }
+  .svc { grid-template-columns: 1fr; }
+  nav a.hide-sm { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="#home"><i></i>Estúdio Digital</a>
+    <nav aria-label="Principal">
+      <a href="#home" data-nav="home">Início</a>
+      <a href="#servicos" data-nav="servicos" class="hide-sm">Serviços</a>
+      <a class="btn sm" href="#servicos">Ver pacotes</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- HOME -->
+  <div id="view-home" data-view="home">
+    <div class="wrap hero">
+      <div>
+        <div class="eyebrow">Design · Redes sociais · Websites</div>
+        <h1>Serviços digitais com preço fechado e entrega garantida</h1>
+        <p class="lead">Escolha um pacote, pague online em segundos e receba o seu projeto no prazo combinado. Sem orçamentos demorados, sem surpresas.</p>
+        <div class="cta">
+          <a class="btn" href="#servicos">Escolher pacote</a>
+          <a class="btn ghost" href="#faq">Como funciona</a>
+        </div>
+        <div class="proof">
+          <div><b>48 h</b>primeira versão</div>
+          <div><b>3</b>pacotes claros</div>
+          <div><b>100%</b>pagamento seguro</div>
+        </div>
+      </div>
+      <aside class="hero-card" aria-label="Como funciona">
+        <h3>Do clique à entrega</h3>
+        <ol class="steps">
+          <li><span>1</span><p><strong>Escolha o pacote</strong>Preço e prazo visíveis antes de comprar.</p></li>
+          <li><span>2</span><p><strong>Pague com segurança</strong>Cartão ou carteira digital via Stripe ou PayPal.</p></li>
+          <li><span>3</span><p><strong>Envie o briefing</strong>Um formulário curto com tudo o que precisamos.</p></li>
+          <li><span>4</span><p><strong>Receba e aprove</strong>Revisões incluídas até ficar como pediu.</p></li>
+        </ol>
+      </aside>
+    </div>
+
+    <section class="block">
+      <div class="wrap">
+        <h2>Pacotes mais pedidos</h2>
+        <p class="sub">Preços em USD. Pode trocar de pacote antes de pagar.</p>
+        <div class="grid3" id="home-packages"></div>
+      </div>
+    </section>
+
+    <section class="block" id="faq">
+      <div class="wrap">
+        <h2>Perguntas frequentes</h2>
+        <p class="sub">Se a sua dúvida não estiver aqui, escreva-nos depois de escolher o pacote.</p>
+        <details><summary>Quando começa o trabalho?</summary><p>Logo após a confirmação do pagamento e do briefing. Recebe a primeira versão em até 48 horas úteis.</p></details>
+        <details><summary>Que formas de pagamento aceitam?</summary><p>Cartão de crédito ou débito e carteiras digitais através do Stripe ou do PayPal. Os dados do cartão nunca passam pelo nosso site.</p></details>
+        <details><summary>Posso pedir alterações?</summary><p>Sim. Cada pacote inclui um número de revisões. Revisões extra podem ser compradas à parte.</p></details>
+      </div>
+    </section>
+  </div>
+
+  <!-- SERVIÇOS -->
+  <div id="view-servicos" data-view="servicos" hidden>
+    <section class="block">
+      <div class="wrap">
+        <div class="eyebrow">Serviços</div>
+        <h2>Escolha o pacote certo para si</h2>
+        <p class="sub">Todos os pacotes incluem ficheiros finais e direitos de uso comercial.</p>
+        <div class="grid3" id="all-packages"></div>
+      </div>
+    </section>
+    <section class="block">
+      <div class="wrap">
+        <h2>O que fazemos</h2>
+        <p class="sub">Combinamos estes serviços dentro de cada pacote.</p>
+        <div class="svc">
+          <article><h3>Identidade visual</h3><p>Logótipo, paleta de cores e tipografia prontas para usar em todo o lado.</p></article>
+          <article><h3>Conteúdo para redes sociais</h3><p>Posts e stories com a sua marca, prontos a publicar no Instagram e Facebook.</p></article>
+          <article><h3>Landing pages</h3><p>Páginas rápidas, focadas em conversão e otimizadas para telemóvel.</p></article>
+          <article><h3>Gestão e suporte</h3><p>Atualizações mensais e relatórios simples com os resultados.</p></article>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- CHECKOUT -->
+  <div id="view-checkout" data-view="checkout" hidden>
+    <div class="wrap checkout">
+      <div class="panel" id="checkout-form-panel">
+        <h2>Finalizar pedido</h2>
+        <p class="sub">Preencha os seus dados e escolha como pagar.</p>
+        <form id="checkout-form" novalidate>
+          <label for="f-pkg">Pacote
+            <select id="f-pkg" name="pkg"></select>
+          </label>
+          <label for="f-name">Nome completo
+            <input id="f-name" name="name" autocomplete="name" required>
+          </label>
+          <label for="f-email">E-mail
+            <input id="f-email" name="email" type="email" autocomplete="email" required>
+          </label>
+          <label for="f-brief">Fale-nos do projeto (opcional)
+            <textarea id="f-brief" name="brief" placeholder="Ex.: nome da marca, cores preferidas, links de referência"></textarea>
+          </label>
+          <fieldset class="pay" style="border:0;padding:0;margin:0">
+            <legend style="font-weight:500;font-size:14px;margin-bottom:6px">Pagamento</legend>
+            <label for="p-stripe"><input type="radio" id="p-stripe" name="pay" value="stripe" checked> Cartão (Stripe)</label>
+            <label for="p-paypal"><input type="radio" id="p-paypal" name="pay" value="paypal"> PayPal</label>
+          </fieldset>
+          <p id="form-error" class="notice" role="alert" hidden></p>
+          <button class="btn" type="submit" id="pay-btn">Pagar</button>
+          <div class="secure">🔒 O pagamento é processado pelo Stripe ou PayPal. Não guardamos dados do cartão.</div>
+        </form>
+      </div>
+      <aside class="panel summary" aria-label="Resumo">
+        <h2>Resumo</h2>
+        <dl id="summary"></dl>
+        <p class="notice"><strong>Modo demonstração.</strong> Nesta versão o botão não cobra nada. No site final, cada pacote liga ao seu link de pagamento do Stripe ou PayPal.</p>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Estúdio Digital (demonstração)</span>
+    <span>Preços e textos editáveis num único ficheiro de configuração</span>
+  </div>
+</footer>
+
+<script>
+/* ------------------------------------------------------------------
+   Configuração: edite aqui preços, textos e links de pagamento.
+   Cada pacote pode ter um link do Stripe (Payment Link) e do PayPal.
+------------------------------------------------------------------- */
+const PACKAGES = [
+  { id: "essencial", name: "Essencial", price: 79, days: 3, revisions: 2,
+    items: ["Logótipo simples", "5 posts para redes sociais", "Ficheiros PNG e PDF"],
+    stripe: "", paypal: "" },
+  { id: "crescimento", name: "Crescimento", price: 199, days: 7, revisions: 3, featured: true,
+    items: ["Identidade visual completa", "15 posts + 5 stories", "Landing page de 1 página", "Guia de marca em PDF"],
+    stripe: "", paypal: "" },
+  { id: "premium", name: "Premium", price: 449, days: 14, revisions: 5,
+    items: ["Tudo do Crescimento", "Site de até 5 páginas", "Gestão de redes por 1 mês", "Relatório de resultados"],
+    stripe: "", paypal: "" }
+];
+
+const $ = (s) => document.querySelector(s);
+const money = (n) => "$" + n.toLocaleString("pt-PT");
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const state = { pkg: PACKAGES.find((p) => p.featured).id };
+
+function pkgCard(p) {
+  return `
+  <article class="pkg${p.featured ? " featured" : ""}">
+    ${p.featured ? '<span class="tag">Mais escolhido</span>' : ""}
+    <h3>${esc(p.name)}</h3>
+    <div class="price">${money(p.price)} <small>pagamento único</small></div>
+    <ul>${p.items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul>
+    <div class="meta">Entrega em ${p.days} dias · ${p.revisions} revisões</div>
+    <a class="btn${p.featured ? "" : " dark"}" href="#checkout" data-pick="${p.id}">Escolher ${esc(p.name)}</a>
+  </article>`;
+}
+
+function renderPackages() {
+  $("#home-packages").innerHTML = PACKAGES.map(pkgCard).join("");
+  $("#all-packages").innerHTML = PACKAGES.map(pkgCard).join("");
+  $("#f-pkg").innerHTML = PACKAGES.map((p) => `<option value="${p.id}">${esc(p.name)} · ${money(p.price)}</option>`).join("");
+}
+
+function renderSummary() {
+  const p = PACKAGES.find((x) => x.id === state.pkg);
+  $("#f-pkg").value = p.id;
+  $("#summary").innerHTML = `
+    <dt>Pacote</dt><dd>${esc(p.name)}</dd>
+    <dt>Prazo</dt><dd>${p.days} dias</dd>
+    <dt>Revisões</dt><dd>${p.revisions}</dd>
+    <dt class="total">Total</dt><dd class="total">${money(p.price)}</dd>`;
+  $("#pay-btn").textContent = "Pagar " + money(p.price);
+}
+
+function show(view) {
+  const valid = ["home", "servicos", "checkout"];
+  if (!valid.includes(view)) view = "home";
+  document.querySelectorAll("[data-view]").forEach((el) => { el.hidden = el.dataset.view !== view; });
+  document.querySelectorAll("[data-nav]").forEach((a) => { if (a.dataset.nav === view) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
+  if (view === "checkout") renderSummary();
+  window.scrollTo(0, 0);
+}
+
+function route() {
+  const h = location.hash.slice(1);
+  if (h === "faq") { show("home"); setTimeout(() => $("#faq").scrollIntoView(), 0); return; }
+  show(h || "home");
+}
+
+document.addEventListener("click", (e) => {
+  const pick = e.target.closest("[data-pick]");
+  if (pick) state.pkg = pick.dataset.pick;
+});
+$("#f-pkg").addEventListener("change", (e) => { state.pkg = e.target.value; renderSummary(); });
+
+$("#checkout-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const name = $("#f-name").value.trim();
+  const email = $("#f-email").value.trim();
+  const err = $("#form-error");
+  if (!name || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    err.textContent = "Indique o seu nome e um e-mail válido para continuar.";
+    err.hidden = false;
+    return;
+  }
+  err.hidden = true;
+  const p = PACKAGES.find((x) => x.id === state.pkg);
+  const method = new FormData(e.target).get("pay");
+  const link = p[method];
+  if (link) { location.href = link; return; }
+  // Demo: sem link configurado, mostra a confirmação
+  $("#checkout-form-panel").innerHTML = `
+    <div class="done">
+      <h2>Pedido recebido, ${esc(name.split(" ")[0])}!</h2>
+      <p class="sub">No site final seria agora redirecionado para o ${method === "stripe" ? "Stripe" : "PayPal"} para pagar ${money(p.price)}.</p>
+      <a class="btn" href="#home">Voltar ao início</a>
+    </div>`;
+});
+
+window.addEventListener("hashchange", route);
+renderPackages();
+route();
+</script>
+</body>
+</html>
